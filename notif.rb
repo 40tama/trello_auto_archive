@@ -2,7 +2,6 @@
 require 'slack'
 require 'trello'
 require 'date'
-require 'time'
 
 # trello
 BOARD_ID = '<board_id>'
@@ -45,8 +44,11 @@ exit if list_id.nil?
 
 list = Trello::List.find(list_id)
 list.cards.each do |c|
+  #日本時間には変換していないので注意
   if c.due.present? and c.due.to_date < Date.today - 7
     c.close!
     print "\narchive card: " + c.name
+    text = "「#{c.name}」をアーカイブしました"
+    notify_to_slack(text)
   end
 end
