@@ -5,7 +5,7 @@ require 'date'
 
 # trello
 BOARD_ID = '<board_id>'
-LIST_NAME = '<list_name>'
+LIST_NAMES = ['<list_name1>', '<list_name2>', '<list_name3>']
 CONSUMER_KEY = '<trello_key>'
 CONSUMER_SECRET = '<trello_secret>'
 OAUTH_TOKEN = '<trello_token>'
@@ -32,23 +32,23 @@ Trello.configure do |config|
 end
 
 board = Trello::Board.find(BOARD_ID)
+list_ids = []
 
-list_id = nil
-
-# リストから7日以上動きのないカードをアーカイブ
 board.lists.each do |l|
-  list_id = l.id if l.name == LIST_NAME
+  list_ids.push(l.id) if LIST_NAMES.include?(l.name)
 end
 
-exit if list_id.nil?
-
-list = Trello::List.find(list_id)
-list.cards.each do |c|
-  #日本時間には変換していないので注意
-  if c.due.present? and c.due.to_date < Date.today - 7
-    c.close!
-    print "\narchive card: " + c.name
-    text = "「#{c.name}」をアーカイブしました"
-    notify_to_slack(text)
+exit if list_ids.nil?
+list_ids.each do |l_id|
+  list = Trello::List.find(l_id)
+  list.cards.each do |c|
+    # 期限から7日以上経過したカードをアーカイブ
+    # 日本時間には変換していないので注意
+    if c.due.present? and c.due.to_date < Date.today - 7
+      c.close!
+      text = "「#{c.name}」をアーカイブしました"
+      print "#{text}\n"
+      notify_to_slack(text)
+    end
   end
 end
